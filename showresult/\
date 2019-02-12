@@ -1,0 +1,28 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+
+def draw_pic(a,b,path):
+    total_width, n = 0.4, 2
+    width = total_width / n
+    x = np.arange(3)
+    x = x - (total_width - width) / 2
+    names = ['corretness','precision','combine'] 
+    plt.bar(x, a, width=width, label='netzob')
+    plt.bar(x + width, b, width=width, label='ics_parser')
+    plt.xticks(x + width/2,names)
+    plt.legend(loc = 0)
+    #plt.show()
+    fpath = os.path.join(path,'bar.jpg')
+    plt.savefig(fpath)
+    plt.close('all')
+
+a = np.array([0.9667,0.2581,0.2495])
+b = np.array([0.9355,0.9355,0.8751])
+draw_pic(a,b,'/home/wxw/paper/researchresult/classify/iec104/pic')
+a = np.array([0.8,0.75,0.60000])
+b = np.array([1.0,1.0,1.0])
+draw_pic(a,b,'/home/wxw/paper/researchresult/classify/modbus/pic')
+a = np.array([0.5,0.5,0.25])
+b = np.array([1.0,1.0,1.0])
+draw_pic(a,b,'/home/wxw/paper/researchresult/classify/cip/pic')

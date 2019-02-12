@@ -1,0 +1,36 @@
+import wx
+#coding:utf-8
+class importMenu:
+    def __init__(self):
+        self.importbar=wx.MenuBar()
+        self.alignbar=wx.Menu()
+        self.importmenu=wx.Menu()
+        self.showmenu=wx.Menu()
+        self.delitmenu=wx.Menu()
+        self.state=wx.Menu()
+        self.changemenu=wx.Menu()
+        self.automenu=wx.Menu()
+        self.state_me=self.state.Append(-1,"状态机信息")
+        self.state_pic=self.state.Append(-1,"状态机图像")
+        self.auto_do=self.automenu.Append(-1,"自动解析")
+        self.autp_preinfo = self.automenu.Append(-1,'定位功能码')
+        self.auto_done = self.automenu.Append(-1,'解析协议')
+        self.importmessage=self.importmenu.Append(-1,"从文件读取")
+        self.salign=self.alignbar.Append(-1,"模式抽取")
+        self.showways=self.showmenu.Append(-1,"二进制")
+        self.showways1=self.showmenu.Append(-1,"16进制")
+        self.showways2=self.showmenu.Append(-1,"字符串")
+        self.lengthstatic = self.showmenu.Append(-1,"长度统计")
+        self.pinfan = self.showmenu.Append(-1, "挖掘频繁序列")
+        self.delit=self.delitmenu.Append(-1,"分割")
+        self.change=self.changemenu.Append(-1,u"未知协议模式")
+        self.importbar=wx.MenuBar()
+        self.importbar.Append(self.importmenu,"文件")
+        self.importbar.Append(self.alignbar,"对齐")
+        self.importbar.Append(self.showmenu,"显示方式")
+        self.importbar.Append(self.delitmenu,"分割")
+        self.importbar.Append(self.state,"状态机信息")
+        self.importbar.Append(self.changemenu,u"模式转换")
+        self.importbar.Append(self.automenu,u"自动模式")
+
+        

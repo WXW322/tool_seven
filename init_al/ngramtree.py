@@ -1,0 +1,541 @@
+from netzob.all import *
+from treelib import *
+import numpy as np
+import sys
+
+
+
+class ngramtree:
+    def __init__(self):
+        """
+        self.tree :ngram tree
+        self.conlosfre:frequent votes
+        self.conlosentry:entry votes
+        self.conlosum:sum votes for fre and entry
+        self.baselinelos:baseline locations
+        self.reconlosfre:reverse frequent votes
+        self.Reconlosentry:reverse Reenrty votes
+        self.idoms:vote result
+        self.rightidoms:right idoms
+        self.cnt:diffrent num
+
+
+        """
+        self.tree = Tree()
+        self.tree.create_node(tag = '0_0',identifier = '0_0',data = [0])
+        self.conlosfre = None
+        self.conlosentry = None
+        self.conlosum = None
+        self.baselinelos = None
+        self.Reconlosfre = None
+        self.Reconlosentry = None
+        self.idoms = None
+        self.rightidoms = None
+        self.cnt = 0
+
+
+    def set_right(self,r_idoms):
+        self.rightidoms = r_idoms
+
+    def tract(self,name):
+        los = name.split('_')
+        return los
+
+    def addnode(self,p_name,n_num,depth):
+        t_is = 0
+        for child in self.tree.children(p_name):
+            if (int(self.tract(child.identifier)[1]) == n_num):
+            #if (self.tract(child.identifier)[1] == n_num):
+                name = child.identifier
+                t_is = 1
+                child.data[0] = child.data[0] + 1
+                break
+        if t_is == 0:
+            self.cnt = self.cnt + 1
+            name = str(depth) + '_' + str(n_num) + '_' + str(self.cnt)
+            self.tree.create_node(tag=name, identifier=name, data=[1], parent=p_name)
+        return name
+
+    def add_sequence(self,sequence):
+        t_len = len(sequence)
+        i = 0
+        while(i < t_len):
+            if i == 0:
+                p_name = '0_0'
+            t_num = sequence[i]
+            p_name = self.addnode(p_name,t_num,i + 1)
+            i = i + 1
+
+
+    def build_tree(self,sequences,L):
+        for sequence in sequences:
+            t_len = len(sequence)
+            i = 0
+            while(i < t_len):
+                if i <= t_len - L:
+                    self.add_sequence(sequence[i:i+L])
+                else:
+                    self.add_sequence(sequence[i:])
+                i = i + 1
+
+    def print_tree(self):
+        for node in self.tree.all_nodes():
+            print (node.identifier + '  ' + str(node.data))
+
+    def print_node(self,nid):
+        t_pre = ""
+        t_pre = t_pre + self.tract(nid)[1]
+        t_p = self.tree.parent(nid)
+        while(t_p.identifier != '0_0'):
+            t_pre = t_pre + '_' + self.tract(t_p.identifier)[1]
+            t_p = self.tree.parent(t_p.identifier)
+        print(t_pre,self.tree.get_node(nid).data)
+
+    def print_htree(self):
+        t_H = self.tree.depth()
+        t_h = 1
+        while (t_h <= t_H):
+            t_nodes = self.get_h(t_h)
+            print(t_h)
+            for t_node in t_nodes:
+                t_node = self.tree.get_node(t_node)
+                self.print_node(t_node.identifier)
+                # print (t_node.identifier + ' ' + str(t_node.data))
+
+            t_h = t_h + 1
+
+    def get_h(self,h):
+        t_nodes = []
+        for node in self.tree.all_nodes():
+            if int(self.tract(node.identifier)[0]) == h:
+                t_nodes.append(node.identifier)
+        return t_nodes
+
+
+    def caculate_prob(self):
+        t_H = self.tree.depth()
+        t_h = 1
+        while(t_h <= t_H):
+            t_hnodes = self.get_h(t_h)
+            t_sum = 0
+            t_hpro = []
+            t_cpro = []
+            for t_n in t_hnodes:
+                t_sum = self.tree.get_node(t_n).data[0] + t_sum
+                t_node = self.tree.get_node(t_n)
+                if t_node.is_leaf():
+                    t_node.data.append(0)
+                    continue
+                t_childrens = self.tree.children(t_n)
+                t_shang = 0
+                for child in t_childrens:
+                    t_shang = t_shang + (child.data[0]/t_node.data[0])*np.log(child.data[0]/t_node.data[0])
+                t_node.data.append(-t_shang)
+            for t_n in t_hnodes:
+                t_node = self.tree.get_node(t_n)
+                t_node.data.append(-np.log(t_node.data[0] / t_sum))
+                t_hpro.append(-np.log(t_node.data[0]/t_sum))
+                t_cpro.append(t_node.data[1])
+            t_ndata = np.array(t_hpro)
+            mean = np.mean(t_ndata)
+            std = np.std(t_ndata,ddof=1)
+            t_sdata = np.array(t_cpro)
+            mean_s = np.mean(t_sdata)
+            std_s = np.std(t_sdata,ddof=1)
+            for t_n in t_hnodes:
+                t_node = self.tree.get_node(t_n)
+                if(std != 0):
+                    t_node.data[2] = (t_node.data[2] - mean)/std
+                else:
+                    t_node.data[2] = (t_node.data[2] - mean)
+                if(mean_s == 0 and std_s ==0):
+                    continue
+                t_node.data[1] = (t_node.data[1] - mean_s)/std_s
+            t_h = t_h + 1
+
+    def query_info(self,idom):
+        t_len = len(idom)
+        i = 0
+        t_root = '0_0'
+        while(i < t_len):
+            t_temp = idom[i]
+            t_childrens = self.tree.children(t_root)
+            t_has = 0
+            for children in t_childrens:
+                #if (self.tract(children.identifier)[1] == t_temp):
+                if(int(self.tract(children.identifier)[1]) == t_temp):
+                    t_has = 1
+                    t_root = children.identifier
+                    break
+            if(t_has == 0):
+                break
+            i = i + 1
+        if(i != t_len or i == 0):
+            return 0,0
+        else:
+            return self.tree.get_node(t_root).data[2],self.tree.get_node(t_root).data[1]
+
+    def check_se(self,element):
+        t_len = len(element)
+        i = 0
+        while(i < t_len):
+            print(element[i],end=",")
+            i = i + 1
+        print("")
+
+    def find_slo(self,aa):
+        tt_l = len(aa)
+        j = 0
+        #print('ss')
+        #self.check_se(aa)
+        t_len = len(aa)
+        i = 1
+        t_minfre = 1000
+        t_frelo = -1
+        t_maxent = -1000
+        t_loen = -1
+        while(i <= t_len):
+            #print (i)
+            pre = aa[:i]
+            if(i < t_len):
+                last = aa[i:]
+            else:
+                last = ''
+            #print ('zz')
+            #self.check_se(pre)
+            t_freone,t_entryone = self.query_info(pre)
+            #print(t_frelo)
+            #print(t_entryone)
+            #print('zz')
+            #print('mm')
+            #self.check_se(last)
+            t_frelast,t_enlast = self.query_info(last)
+            #print(t_frelast,t_enlast)
+            #print('mm')
+            t_fre = t_freone + t_frelast
+            t_entry = t_entryone
+            #print(i)
+            #print(t_fre)
+            if(t_fre < t_minfre):
+                t_minfre = t_fre
+                t_frelo = i
+            if(t_entry > t_maxent):
+                t_maxent = t_entry
+                t_loen = i
+            i = i + 1
+        #print (t_frelo,t_loen)
+        return t_frelo,t_loen
+
+    def vote_locas(self,sequence,L):
+        t_len = len(sequence)
+        i = L
+        t_frelos = []
+        t_entrylos = []
+        while(i <= t_len):
+            t_s = sequence[i-L:i]
+            #self.check_se(t_s)
+            t_frelo,t_entrylo = self.find_slo(t_s)
+            #print(t_frelo)
+            if(t_frelo != -1):
+                t_frelos.append(t_frelo + i - L)
+            else:
+                t_frelos.append(-1)
+            if(t_entrylo != -1):
+                t_entrylos.append(t_entrylo + i - L)
+            else:
+                t_entrylos.append(-1)
+            i = i + 1
+        j = t_len - L + 1
+        while(j < t_len):
+            t_s = sequence[j:t_len]
+            t_frelo, t_entrylo = self.find_slo(t_s)
+            if (t_frelo != -1):
+                t_frelos.append(t_frelo + j)
+            else:
+                t_frelos.append(-1)
+            if (t_entrylo != -1):
+                t_entrylos.append(t_entrylo + j)
+            else:
+                t_entrylos.append(-1)
+            j = j + 1
+
+        return t_frelos,t_entrylos
+
+    def vote_Relocations(self,sequence,L):
+        t_len = len(sequence)
+        i = L
+        t_frelos = []
+        t_entrylos = []
+        while(i <= t_len):
+            t_s = sequence[i-L:i]
+            t_frelo,t_entrylo = self.find_slo(t_s)
+            if(t_frelo != -1):
+                t_frelos.append(t_len - (t_frelo + i - L))
+            else:
+                t_frelos.append(-1)
+            if(t_entrylo != -1):
+                t_entrylos.append(t_len - (t_entrylo + i - L))
+            else:
+                t_entrylos.append(-1)
+            i = i + 1
+        j = t_len - L + 1
+        while(j < t_len):
+            t_s = sequence[j:t_len]
+            t_frelo, t_entrylo = self.find_slo(t_s)
+            if (t_frelo != -1):
+                t_frelos.append(t_len - (t_frelo + j))
+            else:
+                t_frelos.append(-1)
+            if (t_entrylo != -1):
+                t_entrylos.append(t_len - (t_entrylo + j))
+            else:
+                t_entrylos.append(-1)
+            j = j + 1
+
+        return t_frelos,t_entrylos
+
+
+
+    def get_conlos(self,messages,L):
+        """
+
+        :param messages:messages data
+        :return:vote locations ascent reverse
+        """
+        t_fref = {}
+        t_entryf = {}
+        for message in messages:
+            temp_fre,temp_entry = self.vote_locas(message,L)
+            t_flen = len(temp_fre)
+            i = 0
+            while(i < t_flen):
+                if(temp_fre[i] not in t_fref):
+                    t_fref[temp_fre[i]] = 1
+                else:
+                    t_fref[temp_fre[i]] = t_fref[temp_fre[i]] + 1
+                i = i + 1
+            t_entrylen = len(temp_entry)
+            i = 0
+            while(i < t_entrylen):
+                if(temp_entry[i] not in t_entryf):
+                    t_entryf[temp_entry[i]] = 1
+                else:
+                    t_entryf[temp_entry[i]] = t_entryf[temp_entry[i]] + 1
+                i = i + 1
+
+        self.conlosfre = t_fref
+        self.conlosentry = t_entryf
+        return t_fref,t_entryf
+
+    def get_sumlos(self):
+        """
+        get sum votes for fre and entry
+        :return:
+        """
+        t_sumlos = {}
+        for key in self.conlosfre:
+            if key not in t_sumlos:
+                t_sumlos[key] = self.conlosfre[key]
+            else:
+                t_sumlos[key] = t_sumlos[key] + self.conlosfre[key]
+        for key in self.conlosentry:
+            if key not in t_sumlos:
+                t_sumlos[key] = self.conlosentry[key]
+            else:
+                t_sumlos[key] = t_sumlos[key] + self.conlosentry[key]
+        self.conlosum = t_sumlos
+        return self.conlosum
+
+    def baseline(self):
+        """
+        vote accord the baseline VE ways
+        :return:vote result
+        """
+        t_baselinelos = []
+        for key in self.conlosum:
+            prekey = key - 1
+            lastkey = key + 1
+            nownum = self.conlosum[key]
+            if(prekey not in self.conlosum):
+                prenum = 0
+            else:
+                prenum = self.conlosum[prekey]
+            if lastkey not in self.conlosum:
+                lastnum = 0
+            else:
+                lastnum = self.conlosum[lastkey]
+            if(nownum > prenum and nownum > lastnum):
+                t_baselinelos.append(key)
+        self.baselinelos = t_baselinelos
+
+
+
+
+
+
+    def get_Reconlos(self,messages,L):
+        """
+        :param messages:messages data
+        :return:vote locations ascent reverse
+        """
+        t_fref = {}
+        t_entryf = {}
+        for message in messages:
+            temp_fre,temp_entry = self.vote_locas(message,L)
+            t_flen = len(temp_fre)
+            i = 0
+            while(i < t_flen):
+                if(temp_fre[i] not in t_fref):
+                    t_fref[temp_fre[i]] = 1
+                else:
+                    t_fref[temp_fre[i]] = t_fref[temp_fre[i]] + 1
+                i = i + 1
+            t_entrylen = len(temp_entry)
+            i = 0
+            while(i < t_entrylen):
+                if(temp_entry[i] not in t_entryf):
+                    t_entryf[temp_entry[i]] = 1
+                else:
+                    t_entryf[temp_entry[i]] = t_entryf[temp_entry[i]] + 1
+                i = i + 1
+
+
+        self.Reconlosfre = t_fref
+        self.Reconlosentry = t_entryf
+
+
+        #print (sorted(t_fref.items(),key = lambda d:d[1],reverse = True))
+    def get_locationbycondition(self,times):
+        t_fresplits = []
+        t_entrysplits = []
+        for key in self.conlosfre:
+            if self.conlosfre[key] > times:
+                t_fresplits.append(key)
+        for key in self.conlosentry:
+            if self.conlosentry[key] > times:
+                t_entrysplits.append(key)
+        return t_fresplits,t_entrysplits
+
+    def get_locationbylocal(self,entrys):
+        print ('aaa')
+
+
+    def get_Relocationbycon(self,times):
+        t_reentrys = []
+        for key in self.Reconlosentry:
+            if(self.Reconlosentry[key] > times):
+                t_reentrys.append(key)
+        return t_reentrys
+
+    def get_idoms(self,t_los):
+        t_idoms = []
+        t_len = len(t_los)
+        i = 0
+        while(i < t_len):
+            if(i == 0):
+                t_idoms.append((0,t_los[i]))
+            else:
+                t_idoms.append((t_los[i-1],t_los[i]))
+            i = i + 1
+        t_idoms.append((t_los[i - 1],-1))
+        #self.idoms = t_idoms
+        return t_idoms
+
+    def getkeywords(self,sentence,L):
+        """
+        get final vote result,in:sentence out:locations
+        """
+        t_fres,t_entrys = self.get_conlos(sentence,L)
+        t_finals = {}
+        for key in t_fres:
+            t_finals[key] = t_fres[key]
+        for key in t_entrys:
+            if key not in t_finals:
+                t_finals[key] = t_entrys[key]
+            else:
+                t_finals[key] = t_finals[key] + t_entrys[key]
+        i = 1
+        print(t_finals)
+        t_flos = []
+        t_flos.append(0)
+        sentence = sentence[0]
+        while(i < len(sentence) - 1):
+            prekey = i - 1
+            lastkey = i + 1
+            prenum = 0
+            lastnum = 0
+            nownum = 0
+            if prekey in t_finals:
+                prenum = t_finals[prekey]
+            if lastkey in t_finals:
+                lastnum = t_finals[lastkey]
+            if i in t_finals:
+                nownum = t_finals[i]
+            if(nownum > prenum and nownum > lastnum):
+                t_flos.append(i)
+            i = i + 1
+        print(t_flos)
+        #get keywords in:locations out:keywords
+        i = 1
+        t_fkeys = []
+        while(i < len(t_flos)):
+            t_fkeys.append(sentence[t_flos[i - 1]:t_flos[i]])
+            i = i + 1
+        t_fkeys.append(sentence[t_flos[i - 1]:-1])
+        print(t_fkeys)
+        return t_fkeys
+
+        
+         
+
+                
+
+
+
+    def get_rightscore(self,t_r,t_c,score_l):
+        """
+        caculate the ways finds score
+        :param t_r:right point
+        :param t_c:condidate point
+        :param score_l:score
+        :return:
+        """
+        t_score = 0
+        for r_diom in t_r:
+            if (r_diom[0] > score_l):
+                break
+            for c_idom in t_c:
+                if(c_idom[0] > score_l):
+                    continue
+                if(r_diom[0] == c_idom[0] and r_diom[1] == c_idom[1]):
+                    t_score = t_score + 1
+        print (t_score)
+
+        print (t_score/len(t_r))
+
+
+
+
+
+
+
+
+
+    def get_key(self,idom):
+        return idom[1]
+
+
+    def get_frequentse(self,therehold):
+        t_H = self.tree.depth()
+        t_h = 1
+        t_hnodes = []
+        while(t_h <= t_H):
+            t_nodes = self.get_h(t_h)
+            print(t_h)
+            for t_node in t_nodes:
+                t_node = self.tree.get_node(t_node)
+                if(t_node.data[2] > therehold):
+                    t_hnodes.append((t_node.identifier + ' ' + str(t_node.data),t_node.data[2]))
+            t_h = t_h + 1
+        t_hnodes.sort(key = self.get_key,reverse=True)
+        return t_hnodes

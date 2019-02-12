@@ -1,0 +1,38 @@
+import pyshark
+from binascii import *
+from scapy.all import *
+
+class data:
+    def __init__(self):
+        self.MessageList=[]
+        self.binaryme=[]
+
+
+    def read_file(self,filename):
+        self.MessageList = pyshark.FileCapture(str(filename))
+        self.binaryme=rdpcap(str(filename))
+
+    def get_top(self):
+        top_list=[]
+        for message in self.MessageList:
+            me_one=message.ip
+            final_str=""
+            final_str=final_str+str(message.number)
+            final_str=final_str+" "
+            final_str=final_str+str(message.sniff_timestamp)
+            final_str=final_str+"    "
+            final_str=final_str+me_one.src
+            final_str=final_str+"  "
+            final_str=final_str+me_one.dst
+            top_list.append(final_str)
+        return top_list
+
+    def get_choice(self,lo):
+        cap=self.MessageList[lo]
+        final_str=cap.get_all_for()
+        return final_str
+
+    def get_bchoice(self,lo):
+        temp=self.binaryme[lo]
+        f_me=b2a_hex(str(temp))
+        return f_me

@@ -1,0 +1,6 @@
+#!/bin/bash 
+python3 comclus.py 30
+python3 comclus.py 40
+python3 comclus.py 50
+python3 comclus.py 60
+

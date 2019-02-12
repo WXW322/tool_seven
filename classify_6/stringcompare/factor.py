@@ -1,0 +1,297 @@
+from node import *
+
+class factor(object):
+
+    def __init__(self,var1,var2,change):
+        self.var1=var1
+        self.var2=var2
+        self.change=change
+        self.nodes1=[]
+        self.nodes2=[]
+        self.rate1=0
+        self.rate2=0
+
+    def spart_1(self):
+        self.length1=len(self.var1)
+        self.length2=len(self.var2)
+        i=0
+        j=0
+        #print("B")
+        #print(repr(self.var1))
+        #print(repr(self.var2))
+        while(i<self.length1):
+            pre=0
+            ylo=0
+            j=0
+            while(j<self.length2):
+                if(self.change[j][i]==1):
+                    pre=1
+                    ylo=j
+                    break
+                j=j+1
+            start=i
+            end=i
+            if(pre==1):
+                while(end<self.length1 and ylo<self.length2):
+                    if(self.change[ylo][end]==0):
+                        break;
+                    ylo=ylo+1
+                    end=end+1
+                if(ylo==self.length2):
+                    pass
+                else:
+                    end=end-1
+                contain=self.var1[start:end+1]
+                #print(start," ",end," ",1)
+                t_node=node(contain,start,end,1)
+                self.nodes1.append(t_node)
+                i=end+1
+            else:
+                while(end<self.length1):
+                    t_is=0
+                    ylo=0
+                    while(ylo<self.length2):
+                        if(self.change[ylo][end]==1):
+                            t_is=1
+                            break
+                        ylo=ylo+1
+                    if(t_is==1):
+                        break
+                    end=end+1
+                if(end==self.length2):
+                    pass
+                else:
+                    end=end-1
+                contain=self.var1[start:end]
+                #print(start," ",end," ",0)
+                t_node=node(contain,start,end,0)
+                self.nodes1.append(t_node)
+                i=end+1
+        #print("BB")
+        i=0
+        j=0
+        while(i<self.length2):
+            pre=0
+            ylo=0
+            j=0
+            while(j<self.length1):
+                if(self.change[i][j]==1):
+                    pre=1
+                    ylo=j
+                    break
+                j=j+1
+            start=i
+            end=i
+            if(pre==1):
+                while(end<self.length2 and ylo<self.length1):
+                    if(self.change[end][ylo]==0):
+                        break
+                    ylo=ylo+1
+                    end=end+1
+                if(ylo==self.length1):
+                    pass
+                else:
+                    end=end-1
+                contain=self.var2[start:end+1]
+                t_node=node(contain,start,end,1)
+                self.nodes2.append(t_node)
+                i=end+1
+            else:
+                while(end<self.length2):
+                    t_is=0
+                    ylo=0
+                    while(ylo<self.length1):
+                        if(self.change[end][ylo]==1):
+                            t_is=1
+                            break
+                        ylo=ylo+1              
+                    if(t_is==1):
+                        break
+                    end=end+1
+                if(end==self.length1):
+                    pass
+                else:
+                    end=end-1
+                contain=self.var2[start:end]
+                t_node=node(contain,start,end,0)
+                self.nodes2.append(t_node)
+                i=end+1
+                    
+                
+            
+                
+
+        
+    def do_spart(self):
+        self.length1=len(self.var1)
+        self.length2=len(self.var2)
+        self.change1=[0 for i in range(self.length1)]
+        #print ("%s %s %s"%("A",self.length1,len(self.change1)))
+        self.change2=[0 for i in range(self.length2)]
+        for i in range(self.length1):
+            t_is=0
+            for j in range(self.length2):
+                if(self.change[j][i]==1):
+                    self.change1[i]=1
+                    t_is=1
+                if(t_is==1):
+                    break;
+        for i in range(self.length2):
+            for j in range(self.length1):
+                t_is=0
+                if(self.change[i][j]==1):
+                    self.change2[i]=1
+                    t_is=1
+                if(t_is==1):
+                    break;
+
+    def cluster(self):
+        print self.change1
+        print self.change2
+        i=0
+        while(i<self.length1):
+            if(self.change1[i]==1):
+                start=i
+                end=start
+                j=i+1
+                while(j<self.length1):
+                    if(self.change1[j]==0 or j==self.length1-1):
+                       if(self.change1[j]==0):
+                           end=j-1
+                           break
+                       else:
+                            end=j
+                            break
+                    j=j+1
+                #print (start," ",end," ","1")
+                contain=self.var1[start:end]
+                t_node=node(contain,start,end,1)
+                self.nodes1.append(t_node)
+                i=end+1
+            else:
+                start=i
+                end=start
+                j=i+1
+                while(j<self.length1):
+                    if(self.change1[j]==1 or j==self.length1-1):
+                        if(self.change1[j]==1):
+                            end=j-1
+                            break
+                        else:
+                            end=j
+                            break
+                    j=j+1
+                #print (start," ",end," ","0")
+                contain=self.var1[start:end]
+                t_node=node(contain,start,end,0)
+                self.nodes1.append(t_node)
+                i=end+1
+        i=0
+        j=0
+        while(i<self.length2):
+            if(self.change2[i]==1):
+                start=1
+                end=start
+                j=i+1
+                while(j<self.length2):
+                    if(self.change2[j]==0):
+                        end=j-1
+                        break
+                contain=self.var2[start:end]
+                t_node=node(contain,start,end,1)
+                self.nodes2.append(t_node)
+                i=end+1
+            else:
+                start=i
+                end=start
+                j=i+1
+                while(j<self.length2):
+                    if(self.change2[i]==1):
+                        end=j-1
+                        break
+                contain=self.var2[start:end]
+                t_node=node(contain,start,end,0)
+                self.nodes2.append(t_node)
+                i=end+1
+
+
+    def get_similar(self):
+        t1=len(self.nodes1)
+        t2=len(self.nodes2)
+        t_r1=0
+        t_r2=0
+        for r in self.nodes1:
+            if(r.proper==1):
+                t_r1=t_r1+1
+        for r in self.nodes2:
+            if(r.proper==1):
+                t_r2=t_r2+1
+        self.rate1=float(t_r1)/float(t1)
+        self.rate2=float(t_r2)/float(t2)
+
+    def get_sim(self):
+        return self.rate1*self.rate2
+
+    def get_same(self):
+        length=min(len(self.nodes1),len(self.nodes2))
+        i=0
+        same=0
+        while(i<length):
+            if(self.nodes1[i].proper==1 and self.nodes2[i].proper==1 and self.nodes1[i].contain==self.nodes2[i].contain):
+                same=same+1
+            i=i+1
+        return (float(same)*float(same))/(float(len(self.nodes1))*float(len(self.nodes2)))  
+    def get_same1(self):
+        length=min(len(self.nodes1),len(self.nodes2))
+        i=0
+        same=0
+        while(i<length):
+            if(self.nodes1[i].proper==1 and self.nodes2[i].proper==1 and self.nodes1[i].contain==self.nodes2[i].contain):
+                same=same+1
+            i=i+1
+        return (float(same)*float(same))/(float(length)*float(length))
+
+    def get_distance(self):
+        dis=0
+        length=min(len(self.nodes1),len(self.nodes2))
+        i=0
+        count=0
+        base=pow(10,length)
+        while(i<length):
+            if(self.nodes1[i].proper==1 and self.nodes2[i].proper==1 and self.nodes1[i].contain==self.nodes2[i].contain):
+                length1=len(self.nodes1[i].contain)
+                t_p=0
+                lo=0
+                while(t_p<length1):
+                    t_p=t_p+1
+                    dis=dis+base-lo
+                    lo=lo+1
+                base=base/10
+            i=i+1
+        return dis  
+
+    def get_distance_one(self):
+        dis=0
+        length=min(len(self.nodes1),len(self.nodes2))
+        #print length
+        i=0
+        count=0
+        base=1000
+        while(i<length):
+            if(self.nodes1[i].proper==1 and self.nodes2[i].proper==1 and self.nodes1[i].contain==self.nodes2[i].contain):
+                length1=len(self.nodes1[i].contain)
+                t_p=0
+                while(t_p<length1):
+                    t_p=t_p+1
+                    dis=dis+base+1
+                base=base/10
+            i=i+1
+        return dis  
+                    
+        
+                
+
+
+
+
+                

@@ -1,0 +1,52 @@
+from scapy.all import *
+from netzob.all import *
+from classify import *
+tftp_one=rdpcap("first.pcap")
+tftp_two=rdpcap("se.pcap")
+start_str=[]
+for t in tftp_one:
+     ss=str(t)
+     ss1=ss[70:]
+     if(len(ss1)>0):
+        start_str.append(ss1)
+for t in tftp_two:
+     ss=str(t)
+     ss1=ss[70:]
+     if(len(ss1)>0):
+        start_str.append(ss1)
+for s in start_str:
+    print repr(s)
+print "\r\n"
+file_object = open('thefile_three.txt', 'w+')
+i=0
+j=0
+length_1=len(start_str)
+while(i<length_1-1):
+    j=i+1
+    while(j<length_1):
+        file_object.write(str(i)+" "+str(j))
+        file_object.write("\r\n")
+        pe=prepare(start_str[i],start_str[j])
+        pe.get_lists()
+        pe.get_data()
+        fy=factor(start_str[i],start_str[j],pe.change)
+        file_object.write(repr(start_str[i]))
+        file_object.write("\r\n")
+        file_object.write(repr(start_str[j]))
+        file_object.write("\r\n")
+        #file_object.write(str(pe.change))
+        fy.spart_1()
+        n1=fy.nodes1
+        n2=fy.nodes2
+        len1=len(n1)
+        len2=len(n2)
+        s_i=0
+        s_j=0
+        file_object.write(str(fy.get_same()))
+        file_object.write(str("\r\n"))
+        file_object.write(str(fy.get_distance_one()))
+        file_object.write("\r\n")
+        file_object.write("\r\n")
+        j=j+1
+    i=i+1
+file_object.close()

@@ -1,0 +1,158 @@
+from netzob.all import *
+from pygraphviz import *
+import sys
+sys.path.append("/home/wxw/tools_six/classify_6/stringcompare")
+from classify import *
+from t_node import *
+from cluster import *
+
+class datas:
+    
+    def __init__(self):
+       self.MessageList=[]
+       self.symbol=None
+       self.symbols={}
+       self.abstractlist=[]
+       self.pure_messages=[]
+       self.pure_symbols=[]
+       self.count=0
+
+    def readMessage(self,filename):
+        self.MessageList=PCAPImporter.readFile(filename).values()
+        self.symbol=Symbol(messages=self.MessageList)
+        for me in self.MessageList:
+            s_s=str(me.data)
+            s_temp=t_node(0,s_s)
+            self.pure_messages.append(s_temp)
+        return self.MessageList
+
+    def sealign(self):
+        print "ttt"
+        if(self.symbol is None):
+            if(len(self.MessageList)==0):
+                print "sss"
+                return None
+            else:
+                print "kkk"
+                self.symbol=Symbol(messages=self.MessageList)
+                Format.splitAligned(self.symbol,doInternalSlick=True)
+        else:
+            Format.splitAligned(self.symbol,doInternalSlick=True)
+        print self.symbol
+        return self.symbol
+
+    def splitdilimeter(self,delimeter,leixing):
+        if (leixing==0):
+            if(self.symbol is None):
+                if(len(self.MessageList)==0):
+                    return None
+                else:
+                    print "A"
+                    self.symbol=Symbol(messages=self.MessageList)
+                    Format.splitDelimiter(self.symbol, ASCII(delimeter))
+            else:
+                print "B"
+                mt=delimeter.encode("ascii")
+                zt=delimeter.decode("unicode_escape")
+                print zt
+                print type(mt)
+                print type(delimeter)
+                kt="\r\n"
+                print type(kt)
+                print repr(kt)
+                print repr(mt)
+                if "\r\n"==mt:
+                     print "000"
+                else:
+                     print "111"
+                Format.splitDelimiter(self.symbol, ASCII(zt))
+                print "kkkzzz"
+        else:
+           if(self.symbol is None):
+                if(len(self.MessageList)==0):
+                    return None
+                else:
+                    print "C"
+                    self.symbol=Symbol(messages=self.MessageList)
+                    Format.splitDelimiter(self.symbol, Raw(delimeter))
+           else:
+                print "D"
+                Format.splitDelimiter(self.symbol, Raw(delimeter))
+        return self.symbol
+
+    def remove_col(self,index):
+        del self.symbol.messages[index]
+
+    def get_symbol(self):
+        return self.symbol
+
+    def do_align(self,index):
+        Format.splitAligned(self.symbol.fields[index],doInternalSlick=True)
+
+    def cluster(self,lo):
+        self.symbols = Format.clusterByKeyField(self.symbol, self.symbol.fields[lo])
+
+    def get_symbolsl(self):
+        l_r=[]
+        for keyFieldName, s in self.symbols.items():
+            l_r.append(keyFieldName)
+        return l_r
+
+
+    def get_ith(self,lo):
+        return self.symbols.values()[lo]
+
+    def set_symbol(self,lo):
+        self.symbol=self.symbols.values()[lo]
+
+    def get_state_mecine(self):
+        session=Session(self.MessageList)
+        sessionlist=session.getTrueSessions()
+        for se in sessionlist:
+            sse = se.abstract(self.symbols.values())
+            self.abstractlist.append(sse)
+        automata = Automata.generatePTAAutomata(self.abstractlist,self.symbols.values())
+        dotcode = automata.generateDotCode()
+        t_g=automata.get_graph()
+        t_g.layout()
+        t_g.draw("/home/wxw/tools_four/pic_ture/second.png")
+        return str(dotcode)
+
+    def do_classify(self,num,count):
+        self.count=count
+        self.jihe=cluster(self.pure_messages,self.count)
+        self.jihe.update_bytime(num)
+        i=0
+        while(i<count):
+            message_temp=[]
+            for r in self.jihe.clus[i]:
+                temp=RawMessage(r.contain)
+                message_temp.append(temp)
+            symbol=Symbol(messages=message_temp)
+            Format.splitAligned(symbol,doInternalSlick=True)
+            self.pure_symbols.append(symbol)
+            i=i+1
+
+    def get_top_left(self):
+        messages=[]
+        for y in self.jihe.cores:
+            messages.append(repr(y.contain))
+        return messages
+
+    def get_top_right(self,num):
+        messages=[]
+        for r in self.jihe.clus[num]:
+            messages.append(repr(r.contain))
+            print repr(r.contain)
+        return messages
+
+    def get_down(self,num):
+        sys=self.pure_symbols[num]
+        return sys._str_debug()
+    
+    
+        
+    
+    
+    
+    

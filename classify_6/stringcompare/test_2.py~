@@ -1,0 +1,10 @@
+from scapy.all import *
+from netzob.all import *
+from classify import *
+from binascii import *
+def encode(s):
+    return ' '.join([bin(ord(c)).replace('0b', '') for c in s])
+
+tftp=rdpcap("tftp.pcap")
+tt=tftp[0]
+b2a_hex(str(tt))
