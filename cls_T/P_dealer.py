@@ -4,6 +4,8 @@ import sys
 sys.path.append("../Config/")
 import iec104
 import modbus
+import httpwe
+import cip
 import os
 import time
 
@@ -50,6 +52,12 @@ class p_dealer:
             t_r.append(self.data2sen(data))
         return t_r
 
+    def data2str(self, datas):
+        t_r = []
+        for data in datas:
+            t_r.append(str(data))
+        return t_r
+
     def write_packet(self, path, datas = None):
         #fileone = open(path)
         #writer = PcapWriter(fileone, append = True)
@@ -87,7 +95,8 @@ class p_dealer:
                     t_c.append(i)
                 i = i + 1
             t_fr.append(t_r)
-            t_fc.append(t_c) 
+            if len(t_c) > 0:
+                t_fc.append(t_c) 
         t_fdata = self.convert(t_fc)
         return t_fr, t_fc, t_fdata
 
@@ -96,7 +105,10 @@ class p_dealer:
         t_c = {}
         i = 0
         for data in datas:
-            key = data[lo]
+            if isinstance(lo, tuple):
+                key = int.from_bytes(data[lo[0]:lo[1]], byteorder = 'big', signed = False)
+            else:    
+                key = data[lo]
             if key not in t_r:
                 t_r[key] = []
                 t_c[key] = []
@@ -134,14 +146,25 @@ class p_dealer:
         raw_datas = []
         samp_data = None
         for data in datas:
-            raw_datas.append(data['Raw'].__bytes__())
+            if 'Raw' in data:
+                raw_datas.append(data['Raw'].__bytes__())
         if pro == 'modbus':
             modbusone = modbus.modbus()
             _,_,T_datas = self.get_clsbylos(raw_datas, modbusone.lo)
-            samp_data = self.sample(T_datas, 20)
-        if pro == 'iec104':
+            #samp_data = self.sample(T_datas, 20)
+        elif pro == 'iec104':
             iecone = iec104.iec104()
-            _,_,T_datas = self.get_clsbyre(raw_datas, iecone.res)
+            s_datas = self.transform(raw_datas)
+            _,_,T_datas = self.get_clsbyre(s_datas, iecone.res)
+        elif pro == 'cip':
+            cipone = cip.cip() 
+            _,_,T_datas = self.get_clsbylos(raw_datas, cipone.lo)
+        elif pro == 'http':
+            httpone = httpwe.http()
+            s_datas = self.transform(raw_datas)
+            _,_,T_datas = self.get_clsbyre(s_datas, httpone.res)
+        print(len(T_datas))
+        samp_data = self.sample(T_datas, 20)
         wrpcap(patht, samp_data)
         #self.write_packet(samp_data, patht)    
             
@@ -159,7 +182,9 @@ def test():
     datas = dealer.datas
     t_datas = []
     for data in datas:
-        t_datas.append(data['Raw'].__bytes__())
+        print(type(data))
+        if 'Raw' in data:
+            t_datas.append(data['Raw'].__bytes__())
     P_iec = iec104.iec104()
     s_datas = dealer.transform(t_datas)
     f_datas = dealer.get_clsbyre(s_datas, P_iec.res[0])
@@ -168,8 +193,10 @@ def test():
 def test_one():
     start = time.time()
     dealer = p_dealer()
-    dealer.generate('/home/wxw/data/modbusdata', '/home/wxw/one_shot/modbus/one.pcap', 'modbus')
-    dealer.generate('/home/wxw/data/iec104', '/home/wxw/one_shot/iec104/one.pcap', 'iec104')
+    #dealer.generate('/home/wxw/data/modbusdata', '/home/wxw/one_shot/modbus/one.pcap', 'modbus')
+    #dealer.generate('/home/wxw/data/iec104', '/home/wxw/one_shot/iec104/one.pcap', 'iec104')
+    #dealer.generate('/home/wxw/data/cip_datanew', '/home/wxw/one_shot/cip/one.pcap', 'cip')
+    dealer.generate('/home/wxw/data/http', '/home/wxw/one_shot/HTTP/one.pcap', 'http')
     end = time.time()
     print(end - start)
 test_one()
