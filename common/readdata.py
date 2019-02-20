@@ -46,6 +46,12 @@ def cutmessage(messages,lo_c):
         messages[i] = messages[i][lo_c:]
     return messages
 
+def get_part(messages, lo):
+    t_f = []
+    for message in messages:
+        t_f.append(message[:lo])
+    return t_f
+
 def get_ip(t_str):
     t_lo = t_str.find(':')
     return t_str[0:t_lo]
