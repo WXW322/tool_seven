@@ -24,6 +24,11 @@ def train(input_X, output_X, lengths, h_state, model, model_optim):
     model_optim.step()
     return loss
 
+def test_data(input_test, output_test, lengths, h_state, model):
+    out,_ = model(input_test, lengths, h_state)
+    nllloss = nn.NLLLoss()
+    return loss
+
 
 def train_Iter(datas, h_state, model, model_optim, per_iter, T_round):
     for i in range(T_round):

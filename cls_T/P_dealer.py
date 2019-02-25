@@ -6,6 +6,7 @@ import iec104
 import modbus
 import httpwe
 import cip
+import ftp
 import os
 import time
 
@@ -61,7 +62,6 @@ class p_dealer:
     def write_packet(self, path, datas = None):
         #fileone = open(path)
         #writer = PcapWriter(fileone, append = True)
-        sys.exit()
         if datas == None:
             for data in self.datas:
                 writer.write(data)
@@ -163,7 +163,10 @@ class p_dealer:
             httpone = httpwe.http()
             s_datas = self.transform(raw_datas)
             _,_,T_datas = self.get_clsbyre(s_datas, httpone.res)
-        print(len(T_datas))
+        elif pro == 'ftp':
+            ftpone = ftp.ftp()
+            s_datas = self.transform(raw_datas)
+            _,_,T_datas = self.get_clsbyre(s_datas, ftpone.res)
         samp_data = self.sample(T_datas, 20)
         wrpcap(patht, samp_data)
         #self.write_packet(samp_data, patht)    
@@ -196,7 +199,8 @@ def test_one():
     #dealer.generate('/home/wxw/data/modbusdata', '/home/wxw/one_shot/modbus/one.pcap', 'modbus')
     #dealer.generate('/home/wxw/data/iec104', '/home/wxw/one_shot/iec104/one.pcap', 'iec104')
     #dealer.generate('/home/wxw/data/cip_datanew', '/home/wxw/one_shot/cip/one.pcap', 'cip')
-    dealer.generate('/home/wxw/data/http', '/home/wxw/one_shot/HTTP/one.pcap', 'http')
+    #dealer.generate('/home/wxw/data/http', '/home/wxw/one_shot/HTTP/one.pcap', 'http')
+    dealer.generate('/home/wxw/data/ftp/', '/home/wxw/one_shot/ftp/one.pcap', 'ftp')
     end = time.time()
     print(end - start)
 test_one()

@@ -65,6 +65,27 @@ class base_process:
         input_tensor = input_tensor.transpose(0,1)
         lengths = torch.LongTensor(lengths)
         return input_tensor,out_tensor,lengths
+        
+    def Datasplit(self, Datas, count, rate):
+        cates = {}
+        for key in self.cate:
+            cates[key] = []
+        train_set = []
+        test_set = []
+        i = 0
+        if count != 0:
+            for item in Datas:
+                if(len(cates[item[1]]) == count):
+                    test_set.append(item)
+                    continue
+                else:
+                    cate[item] = cate[item].append(i)
+                i = i + 1
+        for key in cate:
+            train_set.extend(cate[key])
+        return train_set, test_set
+
+
 def test_one():
     base = base_process(zerovalue=256)
     base.init_data('/home/wxw/one_shot')
